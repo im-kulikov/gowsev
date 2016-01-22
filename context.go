@@ -12,7 +12,7 @@ type evMessage struct {
 type evConn struct {
 	id                uint64
 	conn              *websocket.Conn
-	writerMessageChan chan string
+	writerMessageChan chan []byte
 	writerCloseChan   chan struct{}
 }
 
@@ -24,4 +24,3 @@ type evContext struct {
 	readerMessageChan chan evMessage
 	readerCloseChan   chan uint64
 }
-

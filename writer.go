@@ -4,28 +4,25 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func reader(id uint64, conn *websocket.Conn, readerMessageChan chan evMessage, readerCloseChan chan uint64) {
+func writer(conn *websocket.Conn) {
 
-	buffer := make([]byte, 1024)
+	writerMessageChan := make(chan []byte)
+	writerCloseChan := make(chan struct{})
+	globalNewConnChan <- &evConn{0, conn, writerMessageChan, writerCloseChan}
 
 	for {
-		bytesRead := 0
-		allOfFrameRead := false
-		for !allOfFrameRead {
-			n, err := conn.Read(buffer[bytesRead:])
-			if err != nil {
-				readerCloseChan <- id
-				return
+		select {
+		case message := <- writerMessageChan:
+			bytesWritten := 0
+			for bytesWritten < len(message) {
+				n, err := conn.Write(message[bytesWritten:])
+				if err != nil {
+					continue
+				}
+				bytesWritten += n
 			}
-			bytesRead += n
-			if bytesRead < len(buffer) {
-				allOfFrameRead = true
-			} else {
-				newBuffer := make([]byte, 2*len(buffer))
-				copy(newBuffer, buffer)
-				buffer = newBuffer
-			}
+		case <- writerCloseChan:
+			return
 		}
-		readerMessageChan <- evMessage{id, buffer[:bytesRead]}
 	}
 }
