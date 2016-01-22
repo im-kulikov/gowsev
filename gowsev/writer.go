@@ -4,7 +4,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-/* wsHandler is called automatically by "golang.org/x/net/websocket". 
+/* wsHandler is called automatically by "golang.org/x/net/websocket".
  * The id is set to zero in writer to signal that the connection is new. The master
  * will handle id assignment.
  */
@@ -20,7 +20,7 @@ func writer(id uint64, conn *websocket.Conn) {
 
 	for {
 		select {
-		case message := <- writerMessageChan:
+		case message := <-writerMessageChan:
 			bytesWritten := 0
 			for bytesWritten < len(message) {
 				n, err := conn.Write(message[bytesWritten:])
@@ -29,7 +29,7 @@ func writer(id uint64, conn *websocket.Conn) {
 				}
 				bytesWritten += n
 			}
-		case <- writerCloseChan:
+		case <-writerCloseChan:
 			return
 		}
 	}

@@ -6,7 +6,7 @@ import (
 
 func reader(id uint64, conn *websocket.Conn, readerMessageChan chan evMessage, readerCloseChan chan uint64) {
 
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 2)
 
 	for {
 		bytesRead := 0

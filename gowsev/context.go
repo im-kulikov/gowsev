@@ -1,6 +1,7 @@
 package gowsev
 
 import (
+	"fmt"
 	"golang.org/x/net/websocket"
 	"net/http"
 	"time"
@@ -29,9 +30,9 @@ type EvContext struct {
 	timeout           time.Duration // int64 nanoseconds
 }
 
-func makeContext(handler *Handler) EvContext {
+func MakeContext(handler *Handler) EvContext {
 	globalNewConnChan = make(chan *evConn)
-	return EvContext{handler, 0, make(map[uint64]*evConn), make(chan evMessage), make(chan uint64), 1000}
+	return EvContext{handler, 0, make(map[uint64]*evConn), make(chan evMessage), make(chan uint64), time.Minute}
 }
 
 func (context *EvContext) GetTimeout() time.Duration {
@@ -47,7 +48,7 @@ func (context *EvContext) AddConn(conn *websocket.Conn) {
 	go writer(context.idCounter, conn)
 }
 
-func (context *EvContext) ListenAndServe(port string) error {
+func (context *EvContext) ListenAndServe(port string) {
 	var wsServer websocket.Server
 	wsServer.Handler = websocket.Handler(wsHandler)
 
@@ -55,8 +56,12 @@ func (context *EvContext) ListenAndServe(port string) error {
 	httpServer.Addr = ":" + port
 	httpServer.Handler = wsServer
 
-	err := httpServer.ListenAndServe()
-	return err
+	go func () {
+		err := httpServer.ListenAndServe()
+		if err != nil {
+			fmt.Printf("Listen error: %s", err)
+		}
+	}()
 }
 
 func (context *EvContext) EventLoopIteration() {
@@ -70,20 +75,21 @@ func (context *EvContext) EventLoopIteration() {
 			evConn.id = context.idCounter
 		}
 		context.conns[evConn.id] = evConn
+		go reader(evConn.id, evConn.conn, context.readerMessageChan, context.readerCloseChan)
 		if acceptedConn {
-			(*context.handler).connAccepted(context, evConn.id)
+			(*context.handler).ConnAccepted(context, evConn.id)
 		}
 	case evMessage := <-context.readerMessageChan:
-		(*context.handler).messageReceived(context, evMessage.id, evMessage.message)
+		(*context.handler).MessageReceived(context, evMessage.id, evMessage.message)
 	case id := <-context.readerCloseChan:
 		evConn, ok := context.conns[id]
 		if ok {
 			evConn.writerCloseChan <- struct{}{}
-			(*context.handler).connClosed(context, id)
+			(*context.handler).ConnClosed(context, id)
 			delete(context.conns, id)
 		}
 	case <-time.After(context.timeout):
-		(*context.handler).eventLoopTimeout(context)
+		(*context.handler).EventLoopTimeout(context)
 	}
 }
 
