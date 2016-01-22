@@ -4,11 +4,19 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func writer(conn *websocket.Conn) {
+/* wsHandler is called automatically by "golang.org/x/net/websocket". 
+ * The id is set to zero in writer to signal that the connection is new. The master
+ * will handle id assignment.
+ */
+func wsHandler(conn *websocket.Conn) {
+	writer(0, conn)
+}
+
+func writer(id uint64, conn *websocket.Conn) {
 
 	writerMessageChan := make(chan []byte)
 	writerCloseChan := make(chan struct{})
-	globalNewConnChan <- &evNewConn{conn, writerMessageChan, writerCloseChan}
+	globalNewConnChan <- &evConn{id, conn, writerMessageChan, writerCloseChan}
 
 	for {
 		select {
