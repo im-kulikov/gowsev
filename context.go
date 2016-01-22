@@ -1,9 +1,9 @@
 package gowsev
 
 import (
-	"time"
-	"net/http"
 	"golang.org/x/net/websocket"
+	"net/http"
+	"time"
 )
 
 type evMessage struct {
@@ -62,7 +62,7 @@ func (context *EvContext) ListenAndServe(port string) error {
 func (context *EvContext) EventLoopIteration() {
 
 	select {
-	case evConn := <- globalNewConnChan:
+	case evConn := <-globalNewConnChan:
 		acceptedConn := false
 		if evConn.id == 0 {
 			acceptedConn = true
@@ -73,16 +73,16 @@ func (context *EvContext) EventLoopIteration() {
 		if acceptedConn {
 			(*context.handler).connAccepted(context, evConn.id)
 		}
-	case evMessage := <- context.readerMessageChan:
-		(*context.handler).messageReceived(context, evMessage.id, evMessage.message) 
-	case id := <- context.readerCloseChan:
+	case evMessage := <-context.readerMessageChan:
+		(*context.handler).messageReceived(context, evMessage.id, evMessage.message)
+	case id := <-context.readerCloseChan:
 		evConn, ok := context.conns[id]
 		if ok {
-			evConn.writerCloseChan <- struct {}{}
+			evConn.writerCloseChan <- struct{}{}
 			(*context.handler).connClosed(context, id)
 			delete(context.conns, id)
 		}
-	case <- time.After(context.timeout):
+	case <-time.After(context.timeout):
 		(*context.handler).eventLoopTimeout(context)
 	}
 }
@@ -93,3 +93,16 @@ func (context *EvContext) EventLoop() {
 	}
 }
 
+func (context *EvContext) Write(id uint64, message []byte) {
+	evConn, ok := context.conns[id]
+	if ok {
+		evConn.writerMessageChan <- message
+	}
+}
+
+func (context *EvContext) Close(id uint64) {
+	evConn, ok := context.conns[id]
+	if ok {
+		evConn.conn.Close()
+	}
+}
