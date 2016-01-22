@@ -8,7 +8,7 @@ func writer(conn *websocket.Conn) {
 
 	writerMessageChan := make(chan []byte)
 	writerCloseChan := make(chan struct{})
-	globalNewConnChan <- &evConn{0, conn, writerMessageChan, writerCloseChan}
+	globalNewConnChan <- &evNewConn{conn, writerMessageChan, writerCloseChan}
 
 	for {
 		select {

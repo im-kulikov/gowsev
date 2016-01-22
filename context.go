@@ -16,7 +16,13 @@ type evConn struct {
 	writerCloseChan   chan struct{}
 }
 
-var globalNewConnChan chan *evConn
+type evNewConn struct {
+	conn              *websocket.Conn
+	writerMessageChan chan []byte
+	writerCloseChan   chan struct{}
+}
+
+var globalNewConnChan chan *evNewConn
 
 type evContext struct {
 	idCounter         uint64
