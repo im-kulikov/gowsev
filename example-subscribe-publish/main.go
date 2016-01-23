@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/morten-krogh/gowsev/gowsev"
+	"strings"
 )
 
 /* This program is an example program using the gowsev libary.
@@ -47,28 +48,35 @@ func (service *Service) handle_message(context *gowsev.EvContext, id uint64, mes
 
 	_, err := fmt.Sscanf(message, "subscribe:%s", &channel)
 	if err == nil {
+		context.Write(id, []byte("OK"))
 		service.subscribe(id, channel)
 		return
 	}
 
 	_, err = fmt.Sscanf(message, "unsubscribe:%s", &channel)
 	if err == nil {
+		context.Write(id, []byte("OK"))
 		service.unsubscribe(id, channel)
 		return
 	}
 
-	if message == "unsubsribe-all" {
+	if message == "unsubscribe-all" {
+		context.Write(id, []byte("OK"))
 		service.unsubscribe_all(id)
+
 		return
 	}
 
-	_, err = fmt.Sscanf(message, "publish:%s:%s", &channel, &body)
-	if err == nil {
+	components := strings.SplitN(message, ":", 3)
+	if len(components) >= 3 && components[0] == "publish" {
+		context.Write(id, []byte("OK"))
+		channel = components[1]
+		body = components[2]
 		service.publish(context, channel, body)
 		return
 	}
-
-	context.Close(id)
+	
+	context.Write(id, []byte("Invalid message"))
 }
 
 func (service *Service) subscribe(id uint64, ch string) {
@@ -118,7 +126,9 @@ func main() {
 
 	var service gowsev.Handler
 
-	service = &Service{nil, nil}
+	idChMap := make(map[uint64](map[string]struct{}))
+	chIdMap := make(map[string](map[uint64]struct{}))
+	service = &Service{idChMap, chIdMap}
 
 	context := gowsev.MakeContext(&service)
 

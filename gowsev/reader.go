@@ -1,15 +1,12 @@
 package gowsev
 
 import (
-//	"fmt"
 	"golang.org/x/net/websocket"
 )
 
 func reader(id uint64, conn *websocket.Conn, readerMessageChan chan evMessage, readerCloseChan chan uint64) {
-
-	buffer := make([]byte, 1024)
-
 	for {
+		buffer := make([]byte, 1024)
 		bytesRead := 0
 		allOfFrameRead := false
 		for !allOfFrameRead {

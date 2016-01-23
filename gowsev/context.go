@@ -56,7 +56,7 @@ func (context *EvContext) ListenAndServe(port string) {
 	httpServer.Addr = ":" + port
 	httpServer.Handler = wsServer
 
-	go func () {
+	go func() {
 		err := httpServer.ListenAndServe()
 		if err != nil {
 			fmt.Printf("Listen error: %s", err)
