@@ -11,11 +11,11 @@ import (
  * 1. "subscribe:(channel)" where (channel) is any string representing a channel, e.g. "subscribe:123"
  * 2. "unsubscribe:(channel)"
  * 3. "unsusbscribe-all"
- * 4. "publish:(channel):(message)"
+ * 4. "publish:(channel):(body)"
  *
  * (channel) and (message) are placeholders for any string. (channel) can not contain colon ":".
  *
- * The operation is straight forward: A publish message is sent to all web sockets subscribed to that channel.
+ * The operation is straight forward: A publish message leads to body being sent to all web sockets subscribed to that channel.
  */
 
 type Service struct {
@@ -37,9 +37,38 @@ func (service *Service) EventLoopTimeout(context *gowsev.EvContext) {
 }
 
 func (service *Service) MessageReceived(context *gowsev.EvContext, id uint64, message []byte) {
-	fmt.Printf("Connection %d sent message %s\n", id, string(message))
+	messageStr := string(message)
+	service.handle_message(context, id, messageStr)
+	fmt.Printf("Connection %d sent message %s\n", id, messageStr)
+}
 
-	//context.Write(service.id, []byte("You sent me: " + string(message)))
+func (service *Service) handle_message(context *gowsev.EvContext, id uint64, message string) {
+	var channel, body string
+
+	_, err := fmt.Sscanf(message, "subscribe:%s", &channel)
+	if err == nil {
+		service.subscribe(id, channel)
+		return
+	}
+
+	_, err = fmt.Sscanf(message, "unsubscribe:%s", &channel)
+	if err == nil {
+		service.unsubscribe(id, channel)
+		return
+	}
+
+	if message == "unsubsribe-all" {
+		service.unsubscribe_all(id)
+		return
+	}
+
+	_, err = fmt.Sscanf(message, "publish:%s:%s", &channel, &body)
+	if err == nil {
+		service.publish(context, channel, body)
+		return
+	}
+
+	context.Close(id)
 }
 
 func (service *Service) subscribe(id uint64, ch string) {
