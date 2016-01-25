@@ -34,6 +34,19 @@ func (context *Context) ListenAndServe(port string) {
 	}()
 }
 
+func (context *Context) ListenAndServeTLS(port string, certFile string, keyFile string) {
+	var httpServer http.Server
+	httpServer.Addr = ":" + port
+	httpServer.Handler = http.HandlerFunc(serverHandler)
+
+	go func() {
+		err := httpServer.ListenAndServeTLS(certFile, keyFile)
+		if err != nil {
+			log.Printf("Listen error: %s", err)
+		}
+	}()
+}
+
 func (context *Context) EventLoopIteration() {
 	handler := *context.handler
 
