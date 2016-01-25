@@ -80,7 +80,7 @@ func (context *Context) Close(id uint64) {
 	}
 }
 
-func (context *Context) AddConn(conn *websocket.Conn) {
+func (context *Context) AddConn(conn *websocket.Conn) uint64 {
 	context.idCounter++
 	id := context.idCounter
 	writerCommandChan := make(chan writerCommand)
@@ -88,4 +88,5 @@ func (context *Context) AddConn(conn *websocket.Conn) {
 	context.econnMap[id] = econn
 	go writer(conn, writerCommandChan)
 	go reader(id, conn, context.readerResultChan)
+	return id
 }
