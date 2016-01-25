@@ -1,30 +1,17 @@
 package gowsev
 
-import (
-	"golang.org/x/net/websocket"
-)
+import "github.com/gorilla/websocket"
 
-func reader(id uint64, conn *websocket.Conn, readerMessageChan chan evMessage, readerCloseChan chan uint64) {
+/* reader reads input from the web socket connection and sends it to the master.
+ * reader runs in its own goroutine.
+ * If the connection closes, the reader goroutine terminates.
+ */
+func reader(id uint64, conn *websocket.Conn, readerResultChan chan readerResult) {
 	for {
-		buffer := make([]byte, 1024)
-		bytesRead := 0
-		allOfFrameRead := false
-		for !allOfFrameRead {
-			n, err := conn.Read(buffer[bytesRead:])
-
-			if err != nil {
-				readerCloseChan <- id
-				return
-			}
-			bytesRead += n
-			if bytesRead < len(buffer) {
-				allOfFrameRead = true
-			} else {
-				newBuffer := make([]byte, 2*len(buffer))
-				copy(newBuffer, buffer)
-				buffer = newBuffer
-			}
+		messageType, data, err := conn.ReadMessage()
+		readerResultChan <- readerResult{id, messageType, data, err}
+		if err != nil {
+			return
 		}
-		readerMessageChan <- evMessage{id, buffer[:bytesRead]}
 	}
 }

@@ -7,48 +7,25 @@ import (
 	"time"
 )
 
-type evMessage struct {
-	id      uint64
-	message []byte
+func MakeContext(handler *Handler) Context {
+	writerInitChan = make(chan writerInit)
+	return Context{handler, 0, make(map[uint64]conn), make(chan readerResult), time.Minute}
 }
 
-type evConn struct {
-	id                uint64
-	conn              *websocket.Conn
-	writerMessageChan chan []byte
-	writerCloseChan   chan struct{}
-}
-
-var globalNewConnChan chan *evConn
-
-type EvContext struct {
-	handler           *Handler
-	idCounter         uint64
-	conns             map[uint64]*evConn
-	readerMessageChan chan evMessage
-	readerCloseChan   chan uint64
-	timeout           time.Duration // int64 nanoseconds
-}
-
-func MakeContext(handler *Handler) EvContext {
-	globalNewConnChan = make(chan *evConn)
-	return EvContext{handler, 0, make(map[uint64]*evConn), make(chan evMessage), make(chan uint64), time.Minute}
-}
-
-func (context *EvContext) GetTimeout() time.Duration {
+func (context *Context) GetTimeout() time.Duration {
 	return context.timeout
 }
 
-func (context *EvContext) SetTimeout(timeout time.Duration) {
+func (context *Context) SetTimeout(timeout time.Duration) {
 	context.timeout = timeout
 }
 
-func (context *EvContext) AddConn(conn *websocket.Conn) {
+func (context *Context) AddConn(conn *websocket.Conn) {
 	context.idCounter++
 	go writer(context.idCounter, conn)
 }
 
-func (context *EvContext) ListenAndServe(port string) {
+func (context *Context) ListenAndServe(port string) {
 	var wsServer websocket.Server
 	wsServer.Handler = websocket.Handler(wsHandler)
 
@@ -64,7 +41,7 @@ func (context *EvContext) ListenAndServe(port string) {
 	}()
 }
 
-func (context *EvContext) EventLoopIteration() {
+func (context *Context) EventLoopIteration() {
 
 	select {
 	case evConn := <-globalNewConnChan:
@@ -93,20 +70,20 @@ func (context *EvContext) EventLoopIteration() {
 	}
 }
 
-func (context *EvContext) EventLoop() {
+func (context *Context) EventLoop() {
 	for {
 		context.EventLoopIteration()
 	}
 }
 
-func (context *EvContext) Write(id uint64, message []byte) {
+func (context *Context) Write(id uint64, message []byte) {
 	evConn, ok := context.conns[id]
 	if ok {
 		evConn.writerMessageChan <- message
 	}
 }
 
-func (context *EvContext) Close(id uint64) {
+func (context *Context) Close(id uint64) {
 	evConn, ok := context.conns[id]
 	if ok {
 		evConn.conn.Close()
