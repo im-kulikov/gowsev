@@ -67,6 +67,7 @@ func MakeContext(handler *Handler) Context
 func (context *Context) GetTimeout() time.Duration
 func (context *Context) SetTimeout(timeout time.Duration)
 func (context *Context) ListenAndServe(port string)
+func (context *Context) ListenAndServeTLS(port string, certFile string, keyFile string)
 func (context *Context) EventLoopIteration()
 func (context *Context) EventLoop()
 func (context *Context) Write(id uint64, message []byte) error
@@ -74,7 +75,7 @@ func (context *Context) Close(id uint64)
 func (context *Context) AddConn(conn *websocket.Conn) uint64
 ```
 
-The functions are self explanatory except for a few points. `EventLoopIteration()` performs a single wait for an event. `EventLoop` performs a loop of such iterations. Mostly, `EventLoop()` will be used. `Wrote` writes a message to the connection with id. The message is a binary websocket message. `AddConn` can be used to add external connections to  the event loop. The user app can dial a websocket connection to an external webservice and put the socket into the event loop.
+The functions are self explanatory except for a few points. `EventLoopIteration()` performs a single wait for an event. `EventLoop` performs a loop of such iterations. Mostly, `EventLoop()` will be used. `Wrote` writes a message to the connection with id. The message is a binary websocket message. `AddConn` can be used to add external connections to  the event loop. The user app can dial a websocket connection to an external webservice and put the socket into the event loop. The server can listen to multiple ports simultaneously in the same event loop; just call `ListenAndServe(port string)` or `ListenAndServeTLS(port string, certFile string, keyFile string)` several times.
 
 
 ## Rationale for a single threaded event loop

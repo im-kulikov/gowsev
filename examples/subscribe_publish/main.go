@@ -136,5 +136,6 @@ func main() {
 	context.ListenAndServe("9000")
 	context.ListenAndServeTLS("9001", "localhost.crt", "localhost.key")
 	fmt.Printf("The subscribe publish service is running on port 9000\n")
+	fmt.Printf("The subscribe publish service is running TLS on port 9001\n")
 	context.EventLoop()
 }
