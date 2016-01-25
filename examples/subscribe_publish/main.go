@@ -24,26 +24,27 @@ type Service struct {
 	chIdMap map[string](map[uint64]struct{}) // chWsMap[ch][id] exists if the websocket id is subscribed to the channel ch.
 }
 
-func (service *Service) ConnAccepted(context *gowsev.EvContext, id uint64) {
+/* implementation of the gowsev Handler interface */
+func (service *Service) ConnAccepted(context *gowsev.Context, id uint64) {
 	fmt.Printf("Connection accepted %d\n", id)
 }
 
-func (service *Service) ConnClosed(context *gowsev.EvContext, id uint64) {
+func (service *Service) ConnClosed(context *gowsev.Context, id uint64) {
 	fmt.Printf("Connection closed %d\n", id)
 	service.unsubscribe_all(id)
 }
 
-func (service *Service) EventLoopTimeout(context *gowsev.EvContext) {
+func (service *Service) EventLoopTimeout(context *gowsev.Context) {
 	fmt.Printf("Timeout\n")
 }
 
-func (service *Service) MessageReceived(context *gowsev.EvContext, id uint64, message []byte) {
+func (service *Service) MessageReceived(context *gowsev.Context, id uint64, message []byte) {
 	messageStr := string(message)
 	service.handle_message(context, id, messageStr)
 	fmt.Printf("Connection %d sent message %s\n", id, messageStr)
 }
 
-func (service *Service) handle_message(context *gowsev.EvContext, id uint64, message string) {
+func (service *Service) handle_message(context *gowsev.Context, id uint64, message string) {
 	var channel, body string
 
 	_, err := fmt.Sscanf(message, "subscribe:%s", &channel)
@@ -113,7 +114,7 @@ func (service *Service) unsubscribe_all(id uint64) {
 	}
 }
 
-func (service *Service) publish(context *gowsev.EvContext, ch string, message string) {
+func (service *Service) publish(context *gowsev.Context, ch string, message string) {
 	ids, ok := service.chIdMap[ch]
 	if ok {
 		for id, _ := range ids {
@@ -133,6 +134,6 @@ func main() {
 	context := gowsev.MakeContext(&service)
 
 	context.ListenAndServe("9000")
+	fmt.Printf("The subscribe publish service is running on port 9000\n")
 	context.EventLoop()
-
 }
