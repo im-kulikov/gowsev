@@ -4,7 +4,12 @@ import (
 	"github.com/gorilla/websocket"
 	"time"
 )
-	
+
+/* messageType is an integer. The important ones are
+ * 1 TextMessage
+ * 2 BinaryMessage
+ */
+
 /* readerResult is sent from the reader to the master when the reader has read from the connection */
 type readerResult struct {
 	id          uint64
@@ -29,8 +34,8 @@ type writerInit struct {
 /* The gobal channel to send the writerInit on. The master listens to this channel. */
 var writerInitChan chan writerInit
 
-/* A conn is a websocket connection and connection specific information needed by the context. */
-type conn struct {
+/* A econn is a websocket connection plus some connection specific information needed by the context. */
+type econn struct {
 	id                uint64
 	conn              *websocket.Conn
 	writerCommandChan chan writerCommand
@@ -43,7 +48,7 @@ type conn struct {
 type Context struct {
 	handler          *Handler
 	idCounter        uint64
-	connMap          map[uint64]conn
+	econnMap         map[uint64]econn
 	readerResultChan chan readerResult
 	timeout          time.Duration // int64 nanosecond, timeout for the event loop.
 }
