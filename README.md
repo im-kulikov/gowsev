@@ -2,6 +2,23 @@
 
 A Go event loop library for a websocket server. The gowsev event loop runs inside a single goroutine. See the discussion below for the rationale for a single threaded(single goroutine) architecture. 
 
+## Installation
+
+Gowsev is a standard Go program and can be installed with
+
+```
+go get github.com/morten-krogh/gowsev
+go install github.com/morten-krogh/gowsev
+```
+
+#### Dependencies
+
+The only dependency besides the Go standard library is the Gorilla websocket library:
+
+```
+go get github.com/gorilla/websocket
+```
+
 ## Usage
 
 To use the server, an event handler must be defined, and a context must be created.
@@ -59,11 +76,6 @@ func (context *Context) AddConn(conn *websocket.Conn) uint64
 
 The functions are self explanatory except for a few points. `EventLoopIteration()` performs a single wait for an event. `EventLoop` performs a loop of such iterations. Mostly, `EventLoop()` will be used. `Wrote` writes a message to the connection with id. The message is a binary websocket message. `AddConn` can be used to add external connections to  the event loop. The user app can dial a websocket connection to an external webservice and put the socket into the event loop.
 
-## Example
-
-There is an exampke in the directory example/subscribe_publish. The subscribe_publish service
-relays messages from users according to subscriptions. The details are described in the file main.go
-
 
 ## Rationale for a single threaded event loop
 
@@ -71,26 +83,14 @@ relays messages from users according to subscriptions. The details are described
 
 
 
+## Architecture of gowsev
 
 
 
-## Installation
 
-Gowsev is a standard Go program and can be installed with
-
-```
-go get github.com/morten-krogh/gowsev
-go install github.com/morten-krogh/gowsev
-```
-
-#### Dependencies
-
-The only dependency besides the Go standard library is the Gorilla websocket library:
-
-```
-go get github.com/gorilla/websocket
-```
 
 
 ## Example
 
+There is an exampke in the directory example/subscribe_publish. The subscribe_publish service
+relays messages from users according to subscriptions. The details are described in the file main.go
