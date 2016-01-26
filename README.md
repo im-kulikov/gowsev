@@ -22,7 +22,7 @@ go get github.com/gorilla/websocket
 ## Usage
 
 To use the server, an event handler must be defined, and a context must be created.
-The simples possible use is
+The simplest possible use is
 
 ```
 var handler gowsev.Handler
@@ -60,7 +60,7 @@ Websocket connections have ids of type uint64 assigned internally by gowsev.
 
 ### gowsev.Context
 
-The context of type gowsev.Context is an opaque data structure that keeps track of the event loop. The api is
+The context of type gowsev.Context is an opaque data structure that keeps track of the event loop. The methods of Context are
 
 ```
 func MakeContext(handler *Handler) Context
@@ -75,7 +75,7 @@ func (context *Context) Close(id uint64)
 func (context *Context) AddConn(conn *websocket.Conn) uint64
 ```
 
-The functions are self explanatory except for a few points. `EventLoopIteration()` performs a single wait for an event. `EventLoop` performs a loop of such iterations. Mostly, `EventLoop()` will be used. `Wrote` writes a message to the connection with id. The message is a binary websocket message. `AddConn` can be used to add external connections to  the event loop. The user app can dial a websocket connection to an external web service and put the socket into the event loop. The server can listen to multiple ports simultaneously in the same event loop; just call `ListenAndServe(port string)` or `ListenAndServeTLS(port string, certFile string, keyFile string)` several times.
+The functions are self explanatory except for a few points. `EventLoopIteration()` performs a single wait for an event. `EventLoop` performs an infinite loop of such iterations. User code will mostly use `EventLoop()`. `Write` writes a message to the connection with id. The message is a binary websocket message. `AddConn` can be used to add external connections to  the event loop. The user app can dial a websocket connection to an external web service and put the socket into the event loop. The server can listen to multiple ports simultaneously in the same event loop; just call `ListenAndServe(port string)` or `ListenAndServeTLS(port string, certFile string, keyFile string)` several times.
 
 
 ## Single threaded event loop
